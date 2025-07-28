@@ -5,6 +5,7 @@ import styled from "styled-components";
 import toast from "react-hot-toast";
 import { AiOutlineFullscreen } from "react-icons/ai";
 import { FaFireFlameCurved, FaGithub } from "react-icons/fa6";
+import { MdSave } from "react-icons/md";
 import { type FileFormat, formats } from "../../../enums/file.enum";
 import { JSONCrackLogo } from "../../../layout/JsonCrackLogo";
 import useFile from "../../../store/useFile";
@@ -45,6 +46,27 @@ function fullscreenBrowser() {
 export const Toolbar = () => {
   const setFormat = useFile(state => state.setFormat);
   const format = useFile(state => state.format);
+  const getContents = useFile(state => state.getContents);
+  const setHasChanges = useFile(state => state.setHasChanges);
+  const hasChanges = useFile(state => state.hasChanges);
+
+  const handleSave = () => {
+    try {
+      // Save to localStorage for persistence
+      const contents = getContents();
+      localStorage.setItem('jsoncrack_saved_content', contents);
+      localStorage.setItem('jsoncrack_saved_format', format);
+      localStorage.setItem('jsoncrack_saved_timestamp', new Date().toISOString());
+      
+      // Mark as saved (no changes)
+      setHasChanges(false);
+      
+      toast.success('Content saved successfully!');
+    } catch (error) {
+      toast.error('Failed to save content');
+      console.error('Save error:', error);
+    }
+  };
 
   return (
     <StyledTools>
@@ -68,6 +90,17 @@ export const Toolbar = () => {
         <FileMenu />
         <ViewMenu />
         <ToolsMenu />
+        <Button
+          onClick={handleSave}
+          size="compact-sm"
+          variant={hasChanges ? "filled" : "outline"}
+          color={hasChanges ? "blue" : "gray"}
+          leftSection={<MdSave size="14" />}
+          fz="12"
+          fw="500"
+        >
+          Save
+        </Button>
       </Group>
       <Group gap="xs" justify="right" w="100%" style={{ flexWrap: "nowrap" }}>
         <Button
