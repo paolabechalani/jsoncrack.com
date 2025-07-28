@@ -48,23 +48,16 @@ export const Toolbar = () => {
   const format = useFile(state => state.format);
   const getContents = useFile(state => state.getContents);
   const setHasChanges = useFile(state => state.setHasChanges);
-  const hasChanges = useFile(state => state.hasChanges);
 
   const handleSave = () => {
     try {
-      // Save to localStorage for persistence
       const contents = getContents();
       localStorage.setItem('jsoncrack_saved_content', contents);
       localStorage.setItem('jsoncrack_saved_format', format);
-      localStorage.setItem('jsoncrack_saved_timestamp', new Date().toISOString());
-      
-      // Mark as saved (no changes)
       setHasChanges(false);
-      
-      toast.success('Content saved successfully!');
+      toast.success('Content saved!');
     } catch (error) {
-      toast.error('Failed to save content');
-      console.error('Save error:', error);
+      toast.error('Failed to save');
     }
   };
 
@@ -93,8 +86,8 @@ export const Toolbar = () => {
         <Button
           onClick={handleSave}
           size="compact-sm"
-          variant={hasChanges ? "filled" : "outline"}
-          color={hasChanges ? "blue" : "gray"}
+          variant="filled"
+          color="blue"
           leftSection={<MdSave size="14" />}
           fz="12"
           fw="500"
