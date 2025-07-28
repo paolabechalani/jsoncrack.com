@@ -1,7 +1,6 @@
 import React, { useCallback } from "react";
 import { LoadingOverlay } from "@mantine/core";
 import styled from "styled-components";
-import toast from "react-hot-toast";
 import Editor, { type EditorProps, loader, type OnMount, useMonaco } from "@monaco-editor/react";
 import useConfig from "../../store/useConfig";
 import useFile from "../../store/useFile";
@@ -29,8 +28,6 @@ const TextEditor = () => {
   const setError = useFile(state => state.setError);
   const jsonSchema = useFile(state => state.jsonSchema);
   const getHasChanges = useFile(state => state.getHasChanges);
-  const setHasChanges = useFile(state => state.setHasChanges);
-  const getContents = useFile(state => state.getContents);
   const theme = useConfig(state => (state.darkmodeEnabled ? "vs-dark" : "light"));
   const fileType = useFile(state => state.format);
 
@@ -62,47 +59,18 @@ const TextEditor = () => {
       }
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        handleSave();
-      }
-    };
-
     window.addEventListener("beforeunload", beforeunload);
-    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       window.removeEventListener("beforeunload", beforeunload);
-      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [getHasChanges, handleSave]);
-
-  const handleSave = useCallback(() => {
-    try {
-      const currentContents = getContents();
-      localStorage.setItem('jsoncrack_saved_content', currentContents);
-      localStorage.setItem('jsoncrack_saved_format', fileType);
-      localStorage.setItem('jsoncrack_saved_timestamp', new Date().toISOString());
-      
-      setHasChanges(false);
-      toast.success('Content saved successfully!');
-    } catch (error) {
-      toast.error('Failed to save content');
-      console.error('Save error:', error);
-    }
-  }, [getContents, fileType, setHasChanges]);
+  }, [getHasChanges]);
 
   const handleMount: OnMount = useCallback(editor => {
     editor.onDidPaste(() => {
       editor.getAction("editor.action.formatDocument")?.run();
     });
-
-    // Add Ctrl+S keyboard shortcut
-    editor.addCommand(monaco?.KeyMod.CtrlCmd | monaco?.KeyCode.KeyS, () => {
-      handleSave();
-    });
-  }, [monaco?.KeyMod, monaco?.KeyCode, handleSave]);
+  }, []);
 
   return (
     <StyledEditorWrapper>
