@@ -167,22 +167,9 @@ const useFile = create<FileStates & JsonActions>()((set, get) => ({
     }
 
     let contents = defaultJson;
-    let format: FileFormat | null = null;
-    
-    // First check for saved content in localStorage
-    const savedContent = localStorage.getItem("jsoncrack_saved_content");
-    const savedFormat = localStorage.getItem("jsoncrack_saved_format") as FileFormat | null;
-    
-    if (savedContent && !widget) {
-      contents = savedContent;
-      format = savedFormat;
-    } else {
-      // Fall back to session content
-      const sessionContent = sessionStorage.getItem("content") as string | null;
-      const sessionFormat = sessionStorage.getItem("format") as FileFormat | null;
-      if (sessionContent && !widget) contents = sessionContent;
-      if (sessionFormat) format = sessionFormat;
-    }
+    const sessionContent = sessionStorage.getItem("content") as string | null;
+    const format = sessionStorage.getItem("format") as FileFormat | null;
+    if (sessionContent && !widget) contents = sessionContent;
 
     if (format) set({ format });
     get().setContents({ contents, hasChanges: false });
