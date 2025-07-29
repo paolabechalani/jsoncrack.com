@@ -87,7 +87,7 @@ const isURL = (value: string) => {
 const debouncedUpdateJson = debounce((value: unknown) => {
   useGraph.getState().setLoading(true);
   useJson.getState().setJson(JSON.stringify(value, null, 2));
-}, 800);
+}, 300);
 
 const useFile = create<FileStates & JsonActions>()((set, get) => ({
   ...initialStates,
@@ -128,9 +128,15 @@ const useFile = create<FileStates & JsonActions>()((set, get) => ({
       });
 
       const isFetchURL = window.location.href.includes("?");
-      const json = await contentToJson(get().contents, get().format);
-
+      // Use the new contents if provided, otherwise use the current contents from state
+      const currentContents = contents || get().contents;
+      const currentFormat = format || get().format;
+      
+      // Skip update only if live transform is disabled AND this is an automatic update (skipUpdate = true)
+      // Allow updates when live transform is enabled OR when it's a manual update (skipUpdate = false)
       if (!useConfig.getState().liveTransformEnabled && skipUpdate) return;
+
+      const json = await contentToJson(currentContents, currentFormat);
 
       if (get().hasChanges && contents && contents.length < 80_000 && !isIframe() && !isFetchURL) {
         sessionStorage.setItem("content", contents);
