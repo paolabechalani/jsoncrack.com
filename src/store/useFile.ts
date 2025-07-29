@@ -14,18 +14,18 @@ const defaultJson = JSON.stringify(
     fruit: {
       name: "Apple",
       color: "Red",
-      weight: "150g"
+      weight: "150g",
     },
     car: {
       model: "Model S",
       year: 2022,
-      brand: "Tesla"
+      brand: "Tesla",
     },
     person: {
       name: "Alice",
       occupation: "Engineer",
-      age: 30
-    }
+      age: 30,
+    },
   },
   null,
   2

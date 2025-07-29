@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
-import { toast } from 'react-hot-toast';
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "react-hot-toast";
 
 interface JsonData {
   title: string;
@@ -38,20 +37,49 @@ export const useJsonData = (): UseJsonDataReturn => {
   const [isSaving, setIsSaving] = useState(false);
 
   // Check if there are changes
-  const hasChanges = originalData && data 
-    ? JSON.stringify(data) !== JSON.stringify(originalData)
-    : false;
+  const hasChanges =
+    originalData && data ? JSON.stringify(data) !== JSON.stringify(originalData) : false;
 
-  // Fetch data from API
+  // Fetch data from localStorage (since API routes are disabled in static export)
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('/api/json-data');
-      setData(response.data);
-      setOriginalData(response.data);
+      // Check if we're on the client side
+      if (typeof window === "undefined") {
+        setIsLoading(false);
+        return;
+      }
+      
+      // Try to get data from localStorage first
+      const storedData = localStorage.getItem("editable-json-data");
+      let jsonData;
+      
+      if (storedData) {
+        jsonData = JSON.parse(storedData);
+      } else {
+        // Use default data if nothing in localStorage
+        jsonData = {
+          title: "Sample JSON Data",
+          description: "This is editable content that you can modify using the edit button",
+          items: [
+            { id: 1, name: "Product A", value: "Electronics" },
+            { id: 2, name: "Product B", value: "Clothing" },
+            { id: 3, name: "Product C", value: "Books" }
+          ],
+          metadata: {
+            version: "1.0.0",
+            lastModified: new Date().toISOString()
+          }
+        };
+        // Save default data to localStorage
+        localStorage.setItem("editable-json-data", JSON.stringify(jsonData));
+      }
+      
+      setData(jsonData);
+      setOriginalData(jsonData);
     } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('Failed to load data');
+      console.error("Error fetching data:", error);
+      toast.error("Failed to load data");
     } finally {
       setIsLoading(false);
     }
@@ -73,20 +101,31 @@ export const useJsonData = (): UseJsonDataReturn => {
     }
   }, [originalData]);
 
-  // Save changes
+  // Save changes to localStorage
   const saveChanges = useCallback(async () => {
-    if (!data) return;
+    if (!data || typeof window === "undefined") return;
 
     setIsSaving(true);
     try {
-      const response = await axios.post('/api/json-data', { data });
-      setData(response.data.data);
-      setOriginalData(response.data.data);
+      // Update metadata
+      const updatedData = {
+        ...data,
+        metadata: {
+          ...data.metadata,
+          lastModified: new Date().toISOString()
+        }
+      };
+      
+      // Save to localStorage
+      localStorage.setItem("editable-json-data", JSON.stringify(updatedData));
+      
+      setData(updatedData);
+      setOriginalData(updatedData);
       setIsEditing(false);
-      toast.success('Changes saved successfully!');
+      toast.success("Changes saved successfully!");
     } catch (error) {
-      console.error('Error saving data:', error);
-      toast.error('Failed to save changes');
+      console.error("Error saving data:", error);
+      toast.error("Failed to save changes");
     } finally {
       setIsSaving(false);
     }
