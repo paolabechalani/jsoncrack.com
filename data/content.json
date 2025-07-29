@@ -1,0 +1,25 @@
+{
+  "title": "Sample JSON Data",
+  "description": "This is editable content that can be modified through the web interface",
+  "items": [
+    {
+      "id": 1,
+      "name": "Product A",
+      "value": "Electronics"
+    },
+    {
+      "id": 2,
+      "name": "Product B", 
+      "value": "Clothing"
+    },
+    {
+      "id": 3,
+      "name": "Product C",
+      "value": "Books"
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "lastModified": "2024-01-15T10:30:00.000Z"
+  }
+}

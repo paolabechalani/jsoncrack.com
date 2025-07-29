@@ -1,6 +1,7 @@
 import React from "react";
 import type { InferGetStaticPropsType, GetStaticProps } from "next";
 import { NextSeo } from "next-seo";
+import { EditableJsonSection } from "../components/EditableJsonSection";
 import { SEO } from "../constants/seo";
 import { FAQ } from "../layout/Landing/FAQ";
 import { Features } from "../layout/Landing/Features";
@@ -17,6 +18,7 @@ export const HomePage = (props: InferGetStaticPropsType<typeof getStaticProps>) 
       <NextSeo {...SEO} canonical="https://jsoncrack.com" />
       <HeroSection stars={props.stars} />
       <HeroPreview />
+      <EditableJsonSection />
       <Section1 />
       <Section2 />
       <Section3 />

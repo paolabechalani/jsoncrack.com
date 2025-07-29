@@ -57,7 +57,9 @@ const CustomNodeWrapper = (nodeProps: NodeProps<NodeData["data"]>) => {
         //worked when placed here with a <G>
         <g data-testid="open-node-modal">
           {Array.isArray(nodeProps.properties.text) ? (
-            data?.isEmpty ? null : <ObjectNode node={node as NodeData} x={x} y={y} />
+            data?.isEmpty ? null : (
+              <ObjectNode node={node as NodeData} x={x} y={y} />
+            )
           ) : (
             <TextNode node={node as NodeData} hasCollapse={!!data?.childrenCount} x={x} y={y} />
           )}
