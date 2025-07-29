@@ -119,6 +119,7 @@ const useFile = create<FileStates & JsonActions>()((set, get) => ({
     }
   },
   setContents: async ({ contents, hasChanges = true, skipUpdate = false, format }) => {
+    console.log('setContents called with:', { contents: contents?.substring(0, 100) + '...', hasChanges, skipUpdate, format });
     try {
       set({
         ...(contents && { contents }),
@@ -126,6 +127,7 @@ const useFile = create<FileStates & JsonActions>()((set, get) => ({
         hasChanges,
         format: format ?? get().format,
       });
+      console.log('Set new contents in state, new contents length:', get().contents.length);
 
       const isFetchURL = window.location.href.includes("?");
       // Use the new contents if provided, otherwise use the current contents from state
@@ -134,9 +136,13 @@ const useFile = create<FileStates & JsonActions>()((set, get) => ({
       
       // Skip update only if live transform is disabled AND this is an automatic update (skipUpdate = true)
       // Allow updates when live transform is enabled OR when it's a manual update (skipUpdate = false)
-      if (!useConfig.getState().liveTransformEnabled && skipUpdate) return;
+      if (!useConfig.getState().liveTransformEnabled && skipUpdate) {
+        console.log('Skipping update due to live transform disabled and skipUpdate=true');
+        return;
+      }
 
       const json = await contentToJson(currentContents, currentFormat);
+      console.log('Parsed JSON for graph update:', JSON.stringify(json).substring(0, 100) + '...');
 
       if (get().hasChanges && contents && contents.length < 80_000 && !isIframe() && !isFetchURL) {
         sessionStorage.setItem("content", contents);
@@ -144,8 +150,10 @@ const useFile = create<FileStates & JsonActions>()((set, get) => ({
         set({ hasChanges: true });
       }
 
+      console.log('Calling debouncedUpdateJson...');
       debouncedUpdateJson(json);
     } catch (error: any) {
+      console.error('Error in setContents:', error);
       if (error?.mark?.snippet) return set({ error: error.mark.snippet });
       if (error?.message) set({ error: error.message });
       useJson.setState({ loading: false });
