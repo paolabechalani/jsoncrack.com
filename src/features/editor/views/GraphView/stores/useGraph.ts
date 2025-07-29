@@ -7,6 +7,7 @@ import type { EdgeData, NodeData } from "../../../../../types/graph";
 import { parser } from "../lib/jsonParser";
 import { getChildrenEdges } from "../lib/utils/getChildrenEdges";
 import { getOutgoers } from "../lib/utils/getOutgoers";
+import useFile from "../../../../../store/useFile";
 
 export interface Graph {
   viewPort: ViewPort | null;
@@ -114,6 +115,7 @@ const useGraph = create<Graph & GraphActions>((set, get) => ({
     setTimeout(() => get().centerView(), 200);
   },
   updateNode: (path, content) => {
+    console.log('updateNode called with path:', path, 'content:', content);
     set(state => {
       if (!state.selectedNode) return {};
       const updatedNodes = state.selectedNode
@@ -123,10 +125,125 @@ const useGraph = create<Graph & GraphActions>((set, get) => ({
               : node
           )
         : state.nodes;
-      return {
+      
+      // Update the graph state
+      const newState = {
         nodes: updatedNodes,
         selectedNode: { ...state.selectedNode, text: content }
       };
+      
+      // After updating the graph, we need to update the left side editor
+      setTimeout(() => {
+        try {
+          console.log('Attempting to update left side editor...');
+          // Get the current JSON from useJson store
+          const currentJson = useJson.getState().json;
+          const parsedJson = JSON.parse(currentJson);
+          console.log('Current JSON:', currentJson);
+          
+          // Parse the path more carefully
+          // Path format examples: "{Root}.property", "Root[0].property", "{Root}.array[0].property"
+          let pathStr = path.replace(/^{Root}\.?/, '').replace(/^Root\[\d+\]\.?/, '');
+          console.log('Parsed path string:', pathStr);
+          
+          if (!pathStr) {
+            // If path is just root, replace the entire content
+            const updatedJsonString = JSON.stringify(content, null, 2);
+            console.log('Updating entire root with:', updatedJsonString);
+            useFile.getState().setContents({ contents: updatedJsonString, hasChanges: true, skipUpdate: false });
+            return;
+          }
+          
+          // Split path by dots, but handle array indices
+          const pathParts = [];
+          let currentPart = '';
+          let bracketDepth = 0;
+          
+          for (let i = 0; i < pathStr.length; i++) {
+            const char = pathStr[i];
+            if (char === '[') {
+              bracketDepth++;
+              currentPart += char;
+            } else if (char === ']') {
+              bracketDepth--;
+              currentPart += char;
+            } else if (char === '.' && bracketDepth === 0) {
+              if (currentPart) pathParts.push(currentPart);
+              currentPart = '';
+            } else {
+              currentPart += char;
+            }
+          }
+          if (currentPart) pathParts.push(currentPart);
+          
+          console.log('Path parts:', pathParts);
+          
+          // Navigate to the target location
+          let target = parsedJson;
+          let parent = null;
+          let finalKey = null;
+          
+          for (let i = 0; i < pathParts.length; i++) {
+            const part = pathParts[i];
+            parent = target;
+            
+            // Handle array access like "property[0]"
+            if (part.includes('[') && part.includes(']')) {
+              const propName = part.substring(0, part.indexOf('['));
+              const indexMatch = part.match(/\[(\d+)\]/);
+              
+              if (propName) {
+                target = target[propName];
+                parent = target;
+              }
+              
+              if (indexMatch && i < pathParts.length - 1) {
+                const index = parseInt(indexMatch[1]);
+                target = target[index];
+                finalKey = index;
+              } else if (indexMatch && i === pathParts.length - 1) {
+                finalKey = parseInt(indexMatch[1]);
+              }
+            } else {
+              if (i === pathParts.length - 1) {
+                finalKey = part;
+              } else {
+                target = target[part];
+              }
+            }
+          }
+          
+          console.log('Final key:', finalKey, 'Parent:', parent);
+          
+          // Update the target
+          if (parent && finalKey !== null) {
+            parent[finalKey] = content;
+            console.log('Updated parent[finalKey] with content');
+          } else {
+            // Fallback: replace entire JSON
+            const updatedJsonString = JSON.stringify(content, null, 2);
+            console.log('Fallback: replacing entire JSON with:', updatedJsonString);
+            useFile.getState().setContents({ contents: updatedJsonString, hasChanges: true, skipUpdate: false });
+            return;
+          }
+          
+          // Update the file contents
+          const updatedJsonString = JSON.stringify(parsedJson, null, 2);
+          console.log('Final updated JSON:', updatedJsonString);
+          useFile.getState().setContents({ contents: updatedJsonString, hasChanges: true, skipUpdate: false });
+        } catch (error) {
+          console.error('Failed to update left side editor:', error);
+          // Fallback: just update with the content as-is
+          try {
+            const updatedJsonString = JSON.stringify(content, null, 2);
+            useFile.getState().setContents({ contents: updatedJsonString, hasChanges: true, skipUpdate: false });
+          } catch (e) {
+            console.error('Fallback update also failed:', e);
+          }
+        }
+      }, 0);
+      
+      return newState;
     });
   },
 
